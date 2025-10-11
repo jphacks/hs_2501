@@ -96,6 +96,50 @@ npm run dev
    - 生成された絵日記を確認
    - 保存・共有・PDF出力（今後実装予定）
 
+## 🔐 アカウント機能（追加）
+
+このアプリはローカルで簡易的なアカウント機能を提供します。アカウントを作成すると、自分の過去の日記を保存・確認できます。
+
+エンドポイント（ローカル）:
+- サインアップ: POST http://localhost:5000/auth/signup  { username, password }
+- ログイン:   POST http://localhost:5000/auth/login   { username, password }
+- 過去日記取得: GET http://localhost:5000/api/diaries  (ヘッダ: x-auth-token: <token>)
+- 日記保存: POST http://localhost:5000/api/diaries     (ヘッダ: x-auth-token: <token>, ボディ: { title, content, image })
+
+フロー:
+1. サインアップ（または既存ユーザでログイン）して token を取得します。
+2. フロント上の「サインアップ／ログイン」フォームから認証を行うと自動で token を保持します。
+3. 絵日記を生成すると、ログイン中であれば自動で保存され、過去日記に表示されます。
+
+注意: 現在の実装は簡易なファイルベースの保存です。実運用にはデータベースや安全な認証（JWT 等）への移行を推奨します。
+
+## 💻 PowerShell（Windows）での実行メモ
+
+ターミナルで文字化けが発生する場合、PowerShell の出力エンコーディングを UTF-8 に変更すると改善します。開発中は以下を実行してください。
+
+```powershell
+chcp 65001
+$OutputEncoding = [System.Text.Encoding]::UTF8
+```
+
+その後、通常のセットアップ手順（バックエンド・フロントの npm install と npm run dev）を実行してください。
+
+例: バックエンドの依存をインストールして起動する
+```powershell
+cd backend
+npm install
+npm run dev
+```
+
+フロントの起動（別ターミナル）
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+フロントは http://localhost:3000、バックエンドは http://localhost:5000 で動作します。
+
 ## 🎨 デザインの特徴
 
 - **グラデーション背景**: ピンクから紫への美しいグラデーション
