@@ -12,7 +12,6 @@ interface DiaryEntry {
   imageData: string;
   imageMimeType: string;
   createdAt: string;
-  isFavorite?: boolean;
 }
 
 const API_URL = 'http://localhost:3001';
@@ -27,7 +26,6 @@ function App() {
   const [savedDiaries, setSavedDiaries] = useState<Map<string, DiaryEntry>>(new Map());
   const [selectedEmotion, setSelectedEmotion] = useState<string>('');
   const [keywords, setKeywords] = useState<string>('');
-  const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [writingStyle, setWritingStyle] = useState<string>('通常');
 
   // アプリ起動時にローカルストレージから日記を読み込み
@@ -65,7 +63,6 @@ function App() {
       setKeywords('');
       setWritingStyle('通常');
       setDiary('');
-      setIsFavorite(false);
 
       loadDiaryForDate(value);
     }
@@ -96,7 +93,6 @@ function App() {
       const entry = savedDiaries.get(dateStr)!;
       setDiary(entry.text);
       setImagePreview(`data:${entry.imageMimeType};base64,${entry.imageData}`);
-      setIsFavorite(entry.isFavorite || false);
       // 既存の日記がある場合は、その日記に関連する情報は表示しない
       setSelectedImage(null);
       setSelectedEmotion('');
@@ -112,7 +108,6 @@ function App() {
         const entry = response.data.diary;
         setDiary(entry.text);
         setImagePreview(`data:${entry.imageMimeType};base64,${entry.imageData}`);
-        setIsFavorite(entry.isFavorite || false);
         setSavedDiaries(prev => new Map(prev).set(dateStr, entry));
         // 既存の日記がある場合は、その日記に関連する情報は表示しない
         setSelectedImage(null);
@@ -125,34 +120,6 @@ function App() {
         console.error('日記の読み込みエラー:', err);
       }
       // 404の場合は日記が存在しないので、フィールドはクリアされたまま
-    }
-  };
-
-  // お気に入り切り替え
-  const toggleFavorite = () => {
-    const dateStr = formatDate(selectedDate);
-    const newFavoriteState = !isFavorite;
-    setIsFavorite(newFavoriteState);
-
-    // ローカルキャッシュを更新
-    setSavedDiaries(prev => {
-      const newMap = new Map(prev);
-      const entry = newMap.get(dateStr);
-      if (entry) {
-        newMap.set(dateStr, { ...entry, isFavorite: newFavoriteState });
-      }
-      return newMap;
-    });
-
-    // ローカルストレージも更新
-    try {
-      const allDiaries = Array.from(savedDiaries.values());
-      const updatedDiaries = allDiaries.map(diary =>
-        diary.date === dateStr ? { ...diary, isFavorite: newFavoriteState } : diary
-      );
-      localStorage.setItem('diaries', JSON.stringify(updatedDiaries));
-    } catch (error) {
-      console.error('ローカルストレージ更新エラー:', error);
     }
   };
 
@@ -192,8 +159,7 @@ function App() {
           text: diaryText,
           imageData: imagePreview?.split(',')[1] || '',
           imageMimeType: selectedImage.type,
-          createdAt: new Date().toISOString(),
-          isFavorite: false
+          createdAt: new Date().toISOString()
         };
 
         // ローカルキャッシュに保存
@@ -241,7 +207,7 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-4">
       <div className="max-w-6xl mx-auto space-y-8">
 
-        {/* 1. タイトルセクション（本の表紙風） */}
+        {/* 1. タイトルセクション */}
         <div className="text-center py-8">
           <h1 className="text-6xl font-serif font-bold text-orange-900 drop-shadow-lg">
             AIbum
@@ -249,7 +215,7 @@ function App() {
           <div className="w-32 h-1 bg-gradient-to-r from-orange-400 to-amber-500 mx-auto mt-4 rounded-full"></div>
         </div>
 
-        {/* 2. カレンダーセクション（本のページ風） */}
+        {/* 2. カレンダーセクション */}
         <div className="bg-gradient-to-br from-orange-100 to-amber-100 p-8 rounded-2xl shadow-xl border border-orange-200">
           <div className="text-center mb-6">
             <h2 className="text-3xl font-serif font-semibold text-orange-900 mb-2">
@@ -260,25 +226,9 @@ function App() {
           <div className="flex justify-center">
             <div className="bg-white p-6 rounded-xl shadow-lg border border-orange-200">
               <Calendar
-                key={`calendar-${savedDiaries.size}`}
                 onChange={handleDateChange}
                 value={selectedDate}
                 locale="ja-JP"
-                tileContent={({ date, view }) => {
-                  if (view === 'month') {
-                    const dateStr = formatDate(date);
-                    const diary = savedDiaries.get(dateStr);
-                    // 日記が存在し、かつ明示的にお気に入りがtrueの場合のみ表示
-                    if (diary && diary.isFavorite === true) {
-                      return (
-                        <div className="flex justify-center items-center mt-1">
-                          <span className="text-yellow-500 text-sm">⭐</span>
-                        </div>
-                      );
-                    }
-                  }
-                  return null;
-                }}
               />
             </div>
           </div>
@@ -287,171 +237,53 @@ function App() {
           </p>
         </div>
 
-        {/* 3. 開いた本のセクション */}
-        <div className="bg-gradient-to-br from-amber-100 to-yellow-100 p-8 rounded-2xl shadow-xl border border-amber-200 relative">
-          {/* 罫線の背景 */}
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-100 to-yellow-100 rounded-2xl"
-            style={{
-              backgroundImage: `
-                   linear-gradient(to right, rgba(251, 146, 60, 0.1) 1px, transparent 1px),
-                   linear-gradient(to bottom, rgba(251, 146, 60, 0.1) 1px, transparent 1px)
-                 `,
-              backgroundSize: '20px 20px'
-            }}>
+        {/* 3. アルバム（開いた本）セクション */}
+        <div className="bg-gradient-to-br from-amber-100 to-yellow-100 p-8 rounded-2xl shadow-xl border border-amber-200">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-serif font-semibold text-orange-900 mb-2">
+              📖 アルバム
+            </h2>
+            <div className="w-16 h-0.5 bg-amber-600 mx-auto"></div>
           </div>
 
-          <div className="relative z-10">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-serif font-semibold text-orange-900 mb-2">
-                📸 日記
-              </h2>
-              <div className="w-16 h-0.5 bg-amber-600 mx-auto"></div>
-            </div>
+          {/* 開いた本のデザイン */}
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-orange-200">
+            <div className="flex min-h-[500px]">
+              {/* 本の背表紙部分（中央） */}
+              <div className="w-2 bg-gradient-to-b from-orange-600 to-amber-600 flex items-center justify-center">
+                <div className="w-0.5 h-12 bg-orange-800 rounded-full"></div>
+              </div>
 
-            {/* 開いた本のデザイン */}
-            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-orange-200">
-              <div className="flex">
-                {/* 本の背表紙部分（中央） */}
-                <div className="w-2 bg-gradient-to-b from-orange-600 to-amber-600 flex items-center justify-center">
-                  <div className="w-0.5 h-8 bg-orange-800 rounded-full"></div>
-                </div>
+              {/* 左ページ - 写真のみ */}
+              <div className="flex-1 p-8 border-r border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50">
+                <div className="h-full flex flex-col">
+                  <h3 className="text-2xl font-serif font-semibold text-orange-900 mb-6 text-center">
+                    📷 {selectedDate.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}の写真
+                  </h3>
 
-                {/* 左ページ */}
-                <div className="flex-1 p-8 border-r border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50">
-                  <div className="h-full flex flex-col justify-between">
-                    {/* 画像アップロード部分 */}
-                    <div className="space-y-6">
-                      <h3 className="text-2xl font-serif font-semibold text-orange-900 mb-6 flex items-center">
-                        📷 {selectedDate.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}の写真
-                      </h3>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="block w-full text-sm text-gray-600
-                        file:mr-4 file:py-3 file:px-6
-                        file:rounded-xl file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-orange-100 file:text-orange-800
-                        hover:file:bg-orange-200
-                        cursor-pointer transition-all duration-200"
+                  {imagePreview ? (
+                    <div className="flex-1 flex items-center justify-center">
+                      <img
+                        src={imagePreview}
+                        alt="思い出の写真"
+                        className="max-w-full max-h-[400px] object-contain rounded-xl shadow-lg border-4 border-white"
                       />
-                      {imagePreview && (
-                        <div className="mt-6">
-                          <img
-                            src={imagePreview}
-                            alt="プレビュー"
-                            className="w-full h-48 object-cover rounded-xl shadow-lg border border-orange-200"
-                          />
-                        </div>
-                      )}
-
-                      {/* 感情選択 */}
-                      <div className="mt-6">
-                        <h4 className="text-lg font-serif font-semibold text-orange-900 mb-3">
-                          😊 あなたの気持ち（任意）
-                        </h4>
-                        <div className="grid grid-cols-4 gap-2">
-                          {['😊', '😢', '😍', '😴', '😋', '😎', '🤔', '🥳'].map((emotion) => (
-                            <button
-                              key={emotion}
-                              onClick={() => setSelectedEmotion(emotion)}
-                              className={`text-2xl p-3 rounded-lg transition-all duration-200 ${selectedEmotion === emotion
-                                ? 'bg-orange-300 shadow-lg scale-110'
-                                : 'bg-orange-100 hover:bg-orange-200 hover:scale-105'
-                                }`}
-                            >
-                              {emotion}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* ハッシュタグ入力 */}
-                      <div className="mt-6">
-                        <h4 className="text-lg font-serif font-semibold text-orange-900 mb-3">
-                          🏷️ ハッシュタグ（任意）
-                        </h4>
-                        <div className="space-y-2">
-                          <input
-                            type="text"
-                            value={keywords}
-                            onChange={(e) => setKeywords(e.target.value)}
-                            placeholder="#美味しい料理 #友達と #楽しい時間 #旅行 #家族"
-                            className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent font-serif text-gray-700"
-                          />
-                          <p className="text-sm text-orange-600 font-serif">
-                            💡 例: #美味しい料理 #友達と #楽しい時間 #旅行 #家族
-                          </p>
-                          {keywords && (
-                            <div className="mt-2">
-                              <p className="text-xs text-orange-500 font-serif mb-1">プレビュー（#を除いた部分）:</p>
-                              <div className="flex flex-wrap gap-1">
-                                {keywords.split(' ').filter(tag => tag.trim()).map((tag, index) => {
-                                  const cleanTag = tag.replace(/^#+/, '').trim();
-                                  return cleanTag ? (
-                                    <span key={index} className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-serif">
-                                      {cleanTag}
-                                    </span>
-                                  ) : null;
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* 文体選択 */}
-                      <div className="mt-6">
-                        <h4 className="text-lg font-serif font-semibold text-orange-900 mb-3">
-                          ✍️ 文体スタイル
-                        </h4>
-                        <div className="grid grid-cols-2 gap-2">
-                          {[
-                            { label: '通常', emoji: '📝' },
-                            { label: '小説風', emoji: '📖' },
-                            { label: '関西弁風', emoji: '🎭' },
-                            { label: 'ギャル風', emoji: '💅' },
-                            { label: '詩的', emoji: '🌸' },
-                            { label: '丁寧語', emoji: '🎩' }
-                          ].map((style) => (
-                            <button
-                              key={style.label}
-                              onClick={() => setWritingStyle(style.label)}
-                              className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 font-serif ${writingStyle === style.label
-                                ? 'bg-orange-300 shadow-lg scale-105 font-bold'
-                                : 'bg-orange-100 hover:bg-orange-200 hover:scale-105'
-                                }`}
-                            >
-                              <span>{style.emoji}</span>
-                              <span>{style.label}</span>
-                            </button>
-                          ))}
-                        </div>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center text-orange-300">
+                        <div className="text-6xl mb-4">📷</div>
+                        <p className="text-lg font-serif">写真を選択してください</p>
                       </div>
                     </div>
-
-                    {/* 生成ボタン（小さく） */}
-                    <div className="mt-8">
-                      <button
-                        onClick={handleGenerateDiary}
-                        disabled={loading || !selectedImage}
-                        className={`w-full py-3 px-6 rounded-xl font-semibold text-white text-base
-                        ${loading || !selectedImage
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:from-orange-700 active:to-amber-700 shadow-lg hover:shadow-xl'
-                          }
-                        transition-all duration-300 transform hover:scale-105`}
-                      >
-                        {loading ? '生成中...' : (diary ? '🔄 再生成' : '✏️ 日記をつくる')}
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
+              </div>
 
-                {/* 右ページ */}
-                <div className="flex-1 p-8 bg-gradient-to-br from-orange-50 to-amber-50">
-                  <h3 className="text-2xl font-serif font-semibold text-orange-900 mb-6 flex items-center">
+              {/* 右ページ - 日記のみ */}
+              <div className="flex-1 p-8 bg-gradient-to-br from-orange-50 to-amber-50">
+                <div className="h-full flex flex-col">
+                  <h3 className="text-2xl font-serif font-semibold text-orange-900 mb-6 text-center">
                     📖 {selectedDate.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}の日記
                   </h3>
 
@@ -462,66 +294,185 @@ function App() {
                   )}
 
                   {loading && (
-                    <div className="flex items-center justify-center py-20">
+                    <div className="flex-1 flex items-center justify-center">
                       <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500"></div>
                     </div>
                   )}
 
                   {diary && !loading && (
-                    <div className="bg-white border-l-4 border-orange-400 p-6 rounded-r-xl shadow-inner">
-                      <div className="space-y-6">
-                        {/* 装飾的なライン */}
-                        <div className="flex items-center space-x-2">
-                          <div className="w-12 h-0.5 bg-orange-400"></div>
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                          <div className="w-8 h-0.5 bg-orange-400"></div>
+                    <div className="flex-1">
+                      <div className="bg-white border-l-4 border-orange-400 p-6 rounded-r-xl shadow-inner h-full">
+                        <div className="space-y-6">
+                          {/* 装飾的なライン */}
+                          <div className="flex items-center space-x-2">
+                            <div className="w-12 h-0.5 bg-orange-400"></div>
+                            <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                            <div className="w-8 h-0.5 bg-orange-400"></div>
+                          </div>
+
+                          {/* 日記本文のみ表示 */}
+                          <p className="text-gray-800 leading-relaxed whitespace-pre-wrap font-serif text-lg">
+                            {diary}
+                          </p>
+
+                          {/* 装飾的なライン */}
+                          <div className="flex items-center justify-end space-x-2">
+                            <div className="w-8 h-0.5 bg-orange-400"></div>
+                            <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                            <div className="w-12 h-0.5 bg-orange-400"></div>
+                          </div>
                         </div>
 
-                        {/* 日記本文のみ表示 */}
-                        <p className="text-gray-800 leading-relaxed whitespace-pre-wrap font-serif text-lg">
-                          {diary}
+                        {/* 日付 */}
+                        <p className="text-sm text-orange-600 mt-8 text-right font-medium border-t border-orange-200 pt-4">
+                          {selectedDate.toLocaleDateString('ja-JP', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
                         </p>
-
-                        {/* 装飾的なライン */}
-                        <div className="flex items-center justify-end space-x-2">
-                          <div className="w-8 h-0.5 bg-orange-400"></div>
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                          <div className="w-12 h-0.5 bg-orange-400"></div>
-                        </div>
-                      </div>
-
-                      {/* 日付 */}
-                      <p className="text-sm text-orange-600 mt-8 text-right font-medium border-t border-orange-200 pt-4">
-                        {selectedDate.toLocaleDateString('ja-JP', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
-
-                      {/* お気に入りボタン */}
-                      <div className="mt-4 flex justify-center">
-                        <button
-                          onClick={toggleFavorite}
-                          className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${isFavorite
-                            ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                        >
-                          <span className="text-xl">{isFavorite ? '⭐' : '☆'}</span>
-                          <span>{isFavorite ? 'お気に入り済み' : 'お気に入り'}</span>
-                        </button>
                       </div>
                     </div>
                   )}
 
                   {!diary && !loading && !error && (
-                    <div className="text-center py-20 text-orange-400">
-                      <p className="text-lg font-serif">まだ日記はありません</p>
+                    <div className="flex-1 flex items-center justify-center text-orange-300">
+                      <p className="text-lg font-serif">日記を生成すると、ここに表示されます</p>
                     </div>
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. 操作パネル（アルバムの下） */}
+        <div className="bg-white p-8 rounded-2xl shadow-xl border-2 border-orange-200">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-serif font-semibold text-orange-900 mb-2">
+              ✏️ 日記を作成
+            </h2>
+            <div className="w-16 h-0.5 bg-orange-600 mx-auto"></div>
+          </div>
+
+          <div className="space-y-6 max-w-4xl mx-auto">
+            {/* 画像アップロード */}
+            <div>
+              <h4 className="text-lg font-serif font-semibold text-orange-900 mb-3">
+                📷 写真を選択
+              </h4>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="block w-full text-sm text-gray-600
+                file:mr-4 file:py-3 file:px-6
+                file:rounded-xl file:border-0
+                file:text-sm file:font-semibold
+                file:bg-orange-100 file:text-orange-800
+                hover:file:bg-orange-200
+                cursor-pointer transition-all duration-200"
+              />
+            </div>
+
+            {/* 気持ち選択 */}
+            <div>
+              <h4 className="text-lg font-serif font-semibold text-orange-900 mb-3">
+                😊 あなたの気持ち（任意）
+              </h4>
+              <div className="grid grid-cols-8 gap-2">
+                {['😊', '😢', '😍', '😴', '😋', '😎', '🤔', '🥳'].map((emotion) => (
+                  <button
+                    key={emotion}
+                    onClick={() => setSelectedEmotion(emotion)}
+                    className={`text-3xl p-3 rounded-lg transition-all duration-200 ${selectedEmotion === emotion
+                      ? 'bg-orange-300 shadow-lg scale-110'
+                      : 'bg-orange-100 hover:bg-orange-200 hover:scale-105'
+                      }`}
+                  >
+                    {emotion}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* ハッシュタグ入力 */}
+            <div>
+              <h4 className="text-lg font-serif font-semibold text-orange-900 mb-3">
+                🏷️ ハッシュタグ（任意）
+              </h4>
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={keywords}
+                  onChange={(e) => setKeywords(e.target.value)}
+                  placeholder="#美味しい料理 #友達と #楽しい時間 #旅行 #家族"
+                  className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent font-serif text-gray-700"
+                />
+                <p className="text-sm text-orange-600 font-serif">
+                  💡 例: #美味しい料理 #友達と #楽しい時間 #旅行 #家族
+                </p>
+                {keywords && (
+                  <div className="mt-2">
+                    <p className="text-xs text-orange-500 font-serif mb-1">プレビュー:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {keywords.split(' ').filter(tag => tag.trim()).map((tag, index) => {
+                        const cleanTag = tag.replace(/^#+/, '').trim();
+                        return cleanTag ? (
+                          <span key={index} className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-serif">
+                            {cleanTag}
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 文体選択 */}
+            <div>
+              <h4 className="text-lg font-serif font-semibold text-orange-900 mb-3">
+                ✍️ 文体スタイル
+              </h4>
+              <div className="grid grid-cols-6 gap-3">
+                {[
+                  { label: '通常', emoji: '📝' },
+                  { label: '小説風', emoji: '📖' },
+                  { label: '関西弁風', emoji: '🎭' },
+                  { label: 'ギャル風', emoji: '💅' },
+                  { label: '詩的', emoji: '🌸' },
+                  { label: '丁寧語', emoji: '🎩' }
+                ].map((style) => (
+                  <button
+                    key={style.label}
+                    onClick={() => setWritingStyle(style.label)}
+                    className={`flex flex-col items-center justify-center gap-2 px-4 py-4 rounded-xl transition-all duration-200 font-serif ${writingStyle === style.label
+                      ? 'bg-orange-300 shadow-lg scale-105 font-bold'
+                      : 'bg-orange-100 hover:bg-orange-200 hover:scale-105'
+                      }`}
+                  >
+                    <span className="text-2xl">{style.emoji}</span>
+                    <span className="text-sm">{style.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 生成ボタン */}
+            <div className="pt-4">
+              <button
+                onClick={handleGenerateDiary}
+                disabled={loading || !selectedImage}
+                className={`w-full py-4 px-8 rounded-xl font-semibold text-white text-lg
+                ${loading || !selectedImage
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:from-orange-700 active:to-amber-700 shadow-lg hover:shadow-xl'
+                  }
+                transition-all duration-300 transform hover:scale-105`}
+              >
+                {loading ? '生成中...' : (diary ? '🔄 再生成する' : '✨ 日記を生成する')}
+              </button>
             </div>
           </div>
         </div>
@@ -531,6 +482,3 @@ function App() {
 }
 
 export default App;
-
-
-
