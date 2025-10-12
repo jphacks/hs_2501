@@ -148,6 +148,91 @@ function App() {
     }
   };
 
+  // base64 文字列を File に変換
+  const base64ToFile = (base64: string, mime: string, filename: string) => {
+    const byteString = atob(base64);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+    return new File([ab], filename, { type: mime });
+  };
+
+  // 任意の File から生成処理を行う（handleGenerateDiary と同様の処理を受け取った file で実行）
+  const generateFromFile = async (file: File) => {
+    setLoading(true);
+    setError('');
+    setDiary('');
+
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('date', formatDate(selectedDate));
+
+    try {
+      const response = await axios.post(`${API_URL}/api/generate-diary`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (response.data.success) {
+        const diaryText = response.data.diary;
+        setDiary(diaryText);
+
+        const dateStr = formatDate(selectedDate);
+        const newEntry: DiaryEntry = {
+          date: dateStr,
+          text: diaryText,
+          imageData: imagePreview?.split(',')[1] || '',
+          imageMimeType: file.type,
+          createdAt: new Date().toISOString(),
+        };
+        setSavedDiaries(prev => new Map(prev).set(dateStr, newEntry));
+      }
+    } catch (err: any) {
+      console.error('エラー:', err);
+      setError('⚠️ 再生成中にエラーが発生しました。コンソールを確認してください。');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 日記を削除（ローカルキャッシュからのみ削除）
+  const handleDeleteDiary = () => {
+    const dateStr = formatDate(selectedDate);
+    setSavedDiaries(prev => {
+      const m = new Map(prev);
+      m.delete(dateStr);
+      return m;
+    });
+    setDiary('');
+  };
+
+  // 日記を再生成（selectedImage がなければ保存済みの imageData を使って再生成）
+  const handleRegenerateDiary = async () => {
+    const dateStr = formatDate(selectedDate);
+
+    if (loading) return;
+
+    if (selectedImage) {
+      await handleGenerateDiary();
+      return;
+    }
+
+    const entry = savedDiaries.get(dateStr);
+    if (!entry || !entry.imageData) {
+      setError('再生成する画像が見つかりません。画像をアップロードしてください。');
+      return;
+    }
+
+    try {
+      const file = base64ToFile(entry.imageData, entry.imageMimeType || 'image/jpeg', `${dateStr}.jpg`);
+      // update preview so user sees it
+      setImagePreview(`data:${entry.imageMimeType};base64,${entry.imageData}`);
+      await generateFromFile(file);
+    } catch (err) {
+      console.error('再生成エラー:', err);
+      setError('⚠️ 再生成に失敗しました');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -251,6 +336,21 @@ function App() {
                       day: 'numeric'
                     })}
                   </p>
+                  <div className="mt-4 flex gap-3 justify-end">
+                    <button
+                      onClick={handleDeleteDiary}
+                      className="py-2 px-4 rounded-md bg-red-100 text-red-700 hover:bg-red-200"
+                    >
+                      削除
+                    </button>
+                    <button
+                      onClick={handleRegenerateDiary}
+                      disabled={loading}
+                      className={`py-2 px-4 rounded-md text-white ${loading ? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                    >
+                      再生成
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
