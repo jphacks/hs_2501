@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import axios from 'axios';
@@ -25,6 +25,24 @@ function App() {
   const [error, setError] = useState<string>('');
   const [savedDiaries, setSavedDiaries] = useState<Map<string, DiaryEntry>>(new Map());
   const [selectedEmotion, setSelectedEmotion] = useState<string>('');
+  const [keywords, setKeywords] = useState<string>('');
+
+  // アプリ起動時にローカルストレージから日記を読み込み
+  useEffect(() => {
+    try {
+      const storedDiaries = localStorage.getItem('diaries');
+      if (storedDiaries) {
+        const diaries: DiaryEntry[] = JSON.parse(storedDiaries);
+        const diaryMap = new Map<string, DiaryEntry>();
+        diaries.forEach(diary => {
+          diaryMap.set(diary.date, diary);
+        });
+        setSavedDiaries(diaryMap);
+      }
+    } catch (error) {
+      console.error('ローカルストレージ読み込みエラー:', error);
+    }
+  }, []);
 
   // 日付を文字列に変換
   const formatDate = (date: Date): string => {
@@ -103,6 +121,7 @@ function App() {
     formData.append('image', selectedImage);
     formData.append('date', formatDate(selectedDate));
     formData.append('emotion', selectedEmotion);
+    formData.append('keywords', keywords);
 
     try {
       const response = await axios.post(`${API_URL}/api/generate-diary`, formData, {
@@ -115,7 +134,7 @@ function App() {
         const diaryText = response.data.diary;
         setDiary(diaryText);
         
-        // 保存された日記をローカルキャッシュに追加
+        // 必ず保存されるように改善
         const dateStr = formatDate(selectedDate);
         const newEntry: DiaryEntry = {
           date: dateStr,
@@ -124,7 +143,22 @@ function App() {
           imageMimeType: selectedImage.type,
           createdAt: new Date().toISOString()
         };
-        setSavedDiaries(prev => new Map(prev).set(dateStr, newEntry));
+        
+        // ローカルキャッシュに保存
+        setSavedDiaries(prev => {
+          const newMap = new Map(prev);
+          newMap.set(dateStr, newEntry);
+          return newMap;
+        });
+        
+        // ローカルストレージにも保存（永続化）
+        try {
+          const allDiaries = Array.from(savedDiaries.values());
+          allDiaries.push(newEntry);
+          localStorage.setItem('diaries', JSON.stringify(allDiaries));
+        } catch (error) {
+          console.error('ローカルストレージ保存エラー:', error);
+        }
       }
     } catch (err: any) {
       console.error('エラー:', err);
@@ -150,11 +184,6 @@ function App() {
     }
   };
 
-  // 再生成
-  const handleRegenerateDiary = () => {
-    setDiary('');
-    handleGenerateDiary();
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-4">
@@ -270,6 +299,40 @@ function App() {
                         ))}
                       </div>
                     </div>
+
+                     {/* ハッシュタグ入力 */}
+                     <div className="mt-6">
+                       <h4 className="text-lg font-serif font-semibold text-orange-900 mb-3">
+                         🏷️ ハッシュタグ（任意）
+                       </h4>
+                       <div className="space-y-2">
+                         <input
+                           type="text"
+                           value={keywords}
+                           onChange={(e) => setKeywords(e.target.value)}
+                           placeholder="#美味しい料理 #友達と #楽しい時間 #旅行 #家族"
+                           className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent font-serif text-gray-700"
+                         />
+                         <p className="text-sm text-orange-600 font-serif">
+                           💡 例: #美味しい料理 #友達と #楽しい時間 #旅行 #家族
+                         </p>
+                         {keywords && (
+                           <div className="mt-2">
+                             <p className="text-xs text-orange-500 font-serif mb-1">プレビュー（#を除いた部分）:</p>
+                             <div className="flex flex-wrap gap-1">
+                               {keywords.split(' ').filter(tag => tag.trim()).map((tag, index) => {
+                                 const cleanTag = tag.replace(/^#+/, '').trim();
+                                 return cleanTag ? (
+                                   <span key={index} className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-serif">
+                                     {cleanTag}
+                                   </span>
+                                 ) : null;
+                               })}
+                             </div>
+                           </div>
+                         )}
+                       </div>
+                     </div>
                   </div>
 
                   {/* 生成ボタン（小さく） */}
@@ -284,7 +347,7 @@ function App() {
                         }
                         transition-all duration-300 transform hover:scale-105`}
                     >
-                      {loading ? '生成中...' : '日記を生成'}
+                      {loading ? '生成中...' : (diary ? '🔄 再生成' : '✨ 日記を生成')}
                     </button>
                   </div>
                 </div>
@@ -309,49 +372,36 @@ function App() {
                 )}
 
                 {diary && !loading && (
-                  <div className="space-y-4">
-                    {/* 再生成ボタン */}
-                    <div className="flex justify-end">
-                      <button
-                        onClick={handleRegenerateDiary}
-                        className="bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 shadow-md hover:shadow-lg"
-                      >
-                        🔄 再生成
-                      </button>
-                    </div>
-
-                    {/* 日記本文 */}
-                    <div className="bg-white border-l-4 border-orange-400 p-6 rounded-r-xl shadow-inner">
-                      <div className="space-y-6">
-                        {/* 装飾的なライン */}
-                        <div className="flex items-center space-x-2">
-                          <div className="w-12 h-0.5 bg-orange-400"></div>
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                          <div className="w-8 h-0.5 bg-orange-400"></div>
-                        </div>
-                        
-                        {/* 日記本文のみ表示 */}
-                        <p className="text-gray-800 leading-relaxed whitespace-pre-wrap font-serif text-lg">
-                          {diary}
-                        </p>
-                        
-                        {/* 装飾的なライン */}
-                        <div className="flex items-center justify-end space-x-2">
-                          <div className="w-8 h-0.5 bg-orange-400"></div>
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                          <div className="w-12 h-0.5 bg-orange-400"></div>
-                        </div>
+                  <div className="bg-white border-l-4 border-orange-400 p-6 rounded-r-xl shadow-inner">
+                    <div className="space-y-6">
+                      {/* 装飾的なライン */}
+                      <div className="flex items-center space-x-2">
+                        <div className="w-12 h-0.5 bg-orange-400"></div>
+                        <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                        <div className="w-8 h-0.5 bg-orange-400"></div>
                       </div>
                       
-                      {/* 日付 */}
-                      <p className="text-sm text-orange-600 mt-8 text-right font-medium border-t border-orange-200 pt-4">
-                        {selectedDate.toLocaleDateString('ja-JP', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
+                      {/* 日記本文のみ表示 */}
+                      <p className="text-gray-800 leading-relaxed whitespace-pre-wrap font-serif text-lg">
+                        {diary}
                       </p>
+                      
+                      {/* 装飾的なライン */}
+                      <div className="flex items-center justify-end space-x-2">
+                        <div className="w-8 h-0.5 bg-orange-400"></div>
+                        <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                        <div className="w-12 h-0.5 bg-orange-400"></div>
+                      </div>
                     </div>
+                    
+                    {/* 日付 */}
+                    <p className="text-sm text-orange-600 mt-8 text-right font-medium border-t border-orange-200 pt-4">
+                      {selectedDate.toLocaleDateString('ja-JP', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
                   </div>
                 )}
 
