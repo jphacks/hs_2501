@@ -54,6 +54,14 @@ function App() {
     if (value instanceof Date) {
       setSelectedDate(value);
       setError('');
+      
+      // 新しい日付に移動する際にフィールドをリセット
+      setSelectedImage(null);
+      setImagePreview(null);
+      setSelectedEmotion('');
+      setKeywords('');
+      setDiary('');
+      
       loadDiaryForDate(value);
     }
   };
@@ -83,6 +91,10 @@ function App() {
       const entry = savedDiaries.get(dateStr)!;
       setDiary(entry.text);
       setImagePreview(`data:${entry.imageMimeType};base64,${entry.imageData}`);
+      // 既存の日記がある場合は、その日記に関連する情報は表示しない
+      setSelectedImage(null);
+      setSelectedEmotion('');
+      setKeywords('');
       return;
     }
 
@@ -94,15 +106,16 @@ function App() {
         setDiary(entry.text);
         setImagePreview(`data:${entry.imageMimeType};base64,${entry.imageData}`);
         setSavedDiaries(prev => new Map(prev).set(dateStr, entry));
+        // 既存の日記がある場合は、その日記に関連する情報は表示しない
+        setSelectedImage(null);
+        setSelectedEmotion('');
+        setKeywords('');
       }
     } catch (err: any) {
       if (err.response?.status !== 404) {
         console.error('日記の読み込みエラー:', err);
       }
-      // 404の場合は日記が存在しないだけなので、クリア
-      setDiary('');
-      setImagePreview(null);
-      setSelectedImage(null);
+      // 404の場合は日記が存在しないので、フィールドはクリアされたまま
     }
   };
 
