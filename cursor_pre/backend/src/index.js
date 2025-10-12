@@ -47,7 +47,7 @@ app.post('/api/generate-diary', upload.single('image'), async (req, res) => {
       });
     }
 
-    const { date, emotion, keywords } = req.body;
+    const { date, emotion, keywords, writingStyle } = req.body;
     if (!date) {
       return res.status(400).json({ 
         error: 'リクエストエラー',
@@ -86,8 +86,30 @@ app.post('/api/generate-diary', upload.single('image'), async (req, res) => {
       }
     }
 
+    // 文体に応じた指示文を追加
+    let styleText = '';
+    switch (writingStyle) {
+      case '小説風':
+        styleText = '文学的で美しい文章表現を使い、情景描写を豊かにして、小説のような文体で書いてください。';
+        break;
+      case '関西弁風':
+        styleText = '関西弁を使って、親しみやすくカジュアルな口調で書いてください。「〜やねん」「〜やで」「〜やわ」などの表現を使ってください。';
+        break;
+      case 'ギャル風':
+        styleText = 'ギャル語を使って、元気でポジティブな口調で書いてください。「マジ」「超」「やばい」「めっちゃ」などの表現を使い、絵文字的な表現も交えてください。';
+        break;
+      case '詩的':
+        styleText = '詩的で韻を踏むような表現を使い、美しく情緒的な文体で書いてください。';
+        break;
+      case '丁寧語':
+        styleText = '丁寧語・敬語を使い、フォーマルで上品な文体で書いてください。「〜ました」「〜でございます」などの表現を使ってください。';
+        break;
+      default: // '通常'
+        styleText = '温かみのある、個人的な日記のような文体で書いてください。';
+    }
+
     const prompt = `この画像を見て、その日の出来事を想像し、200文字程度の日記形式の文章を日本語で書いてください。
-温かみのある、個人的な日記のような文体で書いてください。
+${styleText}
 具体的な描写や感情を含めてください。${emotionText}${keywordText}
 日記の本文のみを出力し、説明文や前置きは不要です。`;
 
