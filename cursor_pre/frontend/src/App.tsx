@@ -52,6 +52,27 @@ function App() {
     return date.toISOString().split('T')[0];
   };
 
+  // 連続日数を計算
+  const calculateStreak = (): number => {
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // 今日から遡って連続日数をカウント
+    let currentDate = new Date(today);
+    while (true) {
+      const dateStr = formatDate(currentDate);
+      if (savedDiaries.has(dateStr)) {
+        streak++;
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+
   // 日付選択ハンドラ
   const handleDateChange = (value: Value) => {
     if (value instanceof Date) {
@@ -264,7 +285,18 @@ function App() {
         </div>
 
         {/* 2. カレンダーセクション */}
-        <div className="bg-gradient-to-br from-orange-100 to-amber-100 p-8 rounded-2xl shadow-xl border border-orange-200">
+        <div className="bg-gradient-to-br from-orange-100 to-amber-100 p-8 rounded-2xl shadow-xl border border-orange-200 relative">
+          {/* 連続日数の吹き出し */}
+          {calculateStreak() >= 3 && (
+            <div className="absolute top-4 right-4 z-10">
+              <div className="relative bg-gradient-to-r from-orange-400 to-amber-400 text-white px-6 py-3 rounded-full shadow-lg animate-pulse">
+                <span className="font-bold text-lg">🔥 {calculateStreak()}日継続中!!</span>
+                {/* 吹き出しの三角形 */}
+                <div className="absolute -bottom-2 right-8 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-amber-400"></div>
+              </div>
+            </div>
+          )}
+          
           <div className="text-center mb-6">
             <h2 className="text-3xl font-serif font-semibold text-orange-900 mb-2">
               📅 カレンダー
@@ -574,7 +606,7 @@ function App() {
                   }
                 transition-all duration-300 transform hover:scale-105`}
               >
-                {loading ? '生成中...' : (diary ? '🔄 再生成する' : '✨ 日記を生成する')}
+                {loading ? '生成中...' : (diary ? '🔄 日記を書き直す' : '✨ 日記を書く')}
               </button>
             </div>
           </div>
