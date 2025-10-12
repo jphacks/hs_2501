@@ -12,7 +12,6 @@ interface DiaryEntry {
   imageData: string;
   imageMimeType: string;
   createdAt: string;
-  isFavorite?: boolean;
 }
 
 const API_URL = 'http://localhost:3001';
@@ -27,11 +26,7 @@ function App() {
   const [savedDiaries, setSavedDiaries] = useState<Map<string, DiaryEntry>>(new Map());
   const [selectedEmotion, setSelectedEmotion] = useState<string>('');
   const [keywords, setKeywords] = useState<string>('');
-<<<<<<< HEAD
-  const [isFavorite, setIsFavorite] = useState<boolean>(false);
-=======
   const [writingStyle, setWritingStyle] = useState<string>('通常');
->>>>>>> 6f0392e19cdd3c0d628e535e286cf76b47d37f9b
 
   // アプリ起動時にローカルストレージから日記を読み込み
   useEffect(() => {
@@ -68,7 +63,6 @@ function App() {
       setKeywords('');
       setWritingStyle('通常');
       setDiary('');
-      setIsFavorite(false);
 
       loadDiaryForDate(value);
     }
@@ -99,7 +93,6 @@ function App() {
       const entry = savedDiaries.get(dateStr)!;
       setDiary(entry.text);
       setImagePreview(`data:${entry.imageMimeType};base64,${entry.imageData}`);
-      setIsFavorite(entry.isFavorite || false);
       // 既存の日記がある場合は、その日記に関連する情報は表示しない
       setSelectedImage(null);
       setSelectedEmotion('');
@@ -115,7 +108,6 @@ function App() {
         const entry = response.data.diary;
         setDiary(entry.text);
         setImagePreview(`data:${entry.imageMimeType};base64,${entry.imageData}`);
-        setIsFavorite(entry.isFavorite || false);
         setSavedDiaries(prev => new Map(prev).set(dateStr, entry));
         // 既存の日記がある場合は、その日記に関連する情報は表示しない
         setSelectedImage(null);
@@ -128,34 +120,6 @@ function App() {
         console.error('日記の読み込みエラー:', err);
       }
       // 404の場合は日記が存在しないので、フィールドはクリアされたまま
-    }
-  };
-
-  // お気に入り切り替え
-  const toggleFavorite = () => {
-    const dateStr = formatDate(selectedDate);
-    const newFavoriteState = !isFavorite;
-    setIsFavorite(newFavoriteState);
-
-    // ローカルキャッシュを更新
-    setSavedDiaries(prev => {
-      const newMap = new Map(prev);
-      const entry = newMap.get(dateStr);
-      if (entry) {
-        newMap.set(dateStr, { ...entry, isFavorite: newFavoriteState });
-      }
-      return newMap;
-    });
-
-    // ローカルストレージも更新
-    try {
-      const allDiaries = Array.from(savedDiaries.values());
-      const updatedDiaries = allDiaries.map(diary =>
-        diary.date === dateStr ? { ...diary, isFavorite: newFavoriteState } : diary
-      );
-      localStorage.setItem('diaries', JSON.stringify(updatedDiaries));
-    } catch (error) {
-      console.error('ローカルストレージ更新エラー:', error);
     }
   };
 
@@ -195,8 +159,7 @@ function App() {
           text: diaryText,
           imageData: imagePreview?.split(',')[1] || '',
           imageMimeType: selectedImage.type,
-          createdAt: new Date().toISOString(),
-          isFavorite: false
+          createdAt: new Date().toISOString()
         };
 
         // ローカルキャッシュに保存
@@ -266,20 +229,6 @@ function App() {
                 onChange={handleDateChange}
                 value={selectedDate}
                 locale="ja-JP"
-                tileContent={({ date, view }) => {
-                  if (view === 'month') {
-                    const dateStr = formatDate(date);
-                    const diary = savedDiaries.get(dateStr);
-                    if (diary && diary.isFavorite) {
-                      return (
-                        <div className="flex justify-center items-center mt-1">
-                          <span className="text-yellow-500 text-sm">⭐</span>
-                        </div>
-                      );
-                    }
-                  }
-                  return null;
-                }}
               />
             </div>
           </div>
@@ -499,20 +448,6 @@ function App() {
                           day: 'numeric'
                         })}
                       </p>
-
-                      {/* お気に入りボタン */}
-                      <div className="mt-4 flex justify-center">
-                        <button
-                          onClick={toggleFavorite}
-                          className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${isFavorite
-                              ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                        >
-                          <span className="text-xl">{isFavorite ? '⭐' : '☆'}</span>
-                          <span>{isFavorite ? 'お気に入り済み' : 'お気に入り'}</span>
-                        </button>
-                      </div>
                     </div>
                   )}
 
