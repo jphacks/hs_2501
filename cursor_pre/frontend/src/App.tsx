@@ -68,6 +68,20 @@ function App() {
     }
   };
 
+  // 前の日付に移動
+  const goToPreviousDay = () => {
+    const previousDay = new Date(selectedDate);
+    previousDay.setDate(previousDay.getDate() - 1);
+    handleDateChange(previousDay);
+  };
+
+  // 次の日付に移動
+  const goToNextDay = () => {
+    const nextDay = new Date(selectedDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    handleDateChange(nextDay);
+  };
+
   // 画像選択ハンドラ
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -246,16 +260,40 @@ function App() {
             <div className="w-16 h-0.5 bg-amber-600 mx-auto"></div>
           </div>
 
-          {/* 開いた本のデザイン */}
-          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-orange-200">
-            <div className="flex min-h-[500px]">
-              {/* 本の背表紙部分（中央） */}
-              <div className="w-2 bg-gradient-to-b from-orange-600 to-amber-600 flex items-center justify-center">
-                <div className="w-0.5 h-12 bg-orange-800 rounded-full"></div>
+          {/* アルバム本体とページめくりボタン */}
+          <div className="relative">
+            {/* 左ページめくりエリア */}
+            <button
+              onClick={goToPreviousDay}
+              className="absolute left-0 top-0 bottom-0 w-16 z-10 flex items-center justify-center group hover:bg-orange-200 hover:bg-opacity-30 transition-all duration-200 rounded-l-2xl"
+              title="前の日"
+            >
+              <div className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-3xl">
+                ◀
               </div>
+            </button>
 
-              {/* 左ページ - 写真のみ */}
-              <div className="flex-1 p-8 border-r border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50">
+            {/* 右ページめくりエリア */}
+            <button
+              onClick={goToNextDay}
+              className="absolute right-0 top-0 bottom-0 w-16 z-10 flex items-center justify-center group hover:bg-orange-200 hover:bg-opacity-30 transition-all duration-200 rounded-r-2xl"
+              title="次の日"
+            >
+              <div className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-3xl">
+                ▶
+              </div>
+            </button>
+
+            {/* 開いた本のデザイン */}
+            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-orange-200 relative" style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.2), inset 0 2px 5px rgba(0,0,0,0.05)' }}>
+              <div className="flex min-h-[500px]">
+                {/* 本の背表紙部分（中央） */}
+                <div className="w-2 bg-gradient-to-b from-orange-600 to-amber-600 flex items-center justify-center relative" style={{ boxShadow: 'inset 0 0 10px rgba(0,0,0,0.3)' }}>
+                  <div className="w-0.5 h-12 bg-orange-800 rounded-full"></div>
+                </div>
+
+                {/* 左ページ - 写真のみ */}
+                <div className="flex-1 p-8 border-r border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 relative" style={{ backgroundImage: 'linear-gradient(to right, rgba(251, 146, 60, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(251, 146, 60, 0.02) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
                 <div className="h-full flex flex-col">
                   <h3 className="text-2xl font-serif font-semibold text-orange-900 mb-6 text-center">
                     📷 {selectedDate.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}の写真
@@ -281,7 +319,7 @@ function App() {
               </div>
 
               {/* 右ページ - 日記のみ */}
-              <div className="flex-1 p-8 bg-gradient-to-br from-orange-50 to-amber-50">
+              <div className="flex-1 p-8 bg-gradient-to-br from-orange-50 to-amber-50 relative" style={{ backgroundImage: 'linear-gradient(to right, rgba(251, 146, 60, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(251, 146, 60, 0.02) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
                 <div className="h-full flex flex-col">
                   <h3 className="text-2xl font-serif font-semibold text-orange-900 mb-6 text-center">
                     📖 {selectedDate.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}の日記
@@ -343,6 +381,7 @@ function App() {
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </div>
 
