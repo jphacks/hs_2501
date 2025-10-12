@@ -12,6 +12,7 @@ interface DiaryEntry {
   imageData: string;
   imageMimeType: string;
   createdAt: string;
+  isFavorite?: boolean;
 }
 
 const API_URL = 'http://localhost:3001';
@@ -27,6 +28,7 @@ function App() {
   const [selectedEmotion, setSelectedEmotion] = useState<string>('');
   const [keywords, setKeywords] = useState<string>('');
   const [writingStyle, setWritingStyle] = useState<string>('通常');
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
 
   // アプリ起動時にローカルストレージから日記を読み込み
   useEffect(() => {
@@ -63,6 +65,7 @@ function App() {
       setKeywords('');
       setWritingStyle('通常');
       setDiary('');
+      setIsFavorite(false);
 
       loadDiaryForDate(value);
     }
@@ -80,6 +83,34 @@ function App() {
     const nextDay = new Date(selectedDate);
     nextDay.setDate(nextDay.getDate() + 1);
     handleDateChange(nextDay);
+  };
+
+  // お気に入り切り替え
+  const toggleFavorite = () => {
+    const dateStr = formatDate(selectedDate);
+    const newFavoriteState = !isFavorite;
+    setIsFavorite(newFavoriteState);
+
+    // ローカルキャッシュを更新
+    setSavedDiaries(prev => {
+      const newMap = new Map(prev);
+      const entry = newMap.get(dateStr);
+      if (entry) {
+        newMap.set(dateStr, { ...entry, isFavorite: newFavoriteState });
+      }
+      return newMap;
+    });
+
+    // ローカルストレージも更新
+    try {
+      const allDiaries = Array.from(savedDiaries.values());
+      const updatedDiaries = allDiaries.map(diary =>
+        diary.date === dateStr ? { ...diary, isFavorite: newFavoriteState } : diary
+      );
+      localStorage.setItem('diaries', JSON.stringify(updatedDiaries));
+    } catch (error) {
+      console.error('ローカルストレージ更新エラー:', error);
+    }
   };
 
   // 画像選択ハンドラ
@@ -107,6 +138,7 @@ function App() {
       const entry = savedDiaries.get(dateStr)!;
       setDiary(entry.text);
       setImagePreview(`data:${entry.imageMimeType};base64,${entry.imageData}`);
+      setIsFavorite(entry.isFavorite || false);
       // 既存の日記がある場合は、その日記に関連する情報は表示しない
       setSelectedImage(null);
       setSelectedEmotion('');
@@ -122,6 +154,7 @@ function App() {
         const entry = response.data.diary;
         setDiary(entry.text);
         setImagePreview(`data:${entry.imageMimeType};base64,${entry.imageData}`);
+        setIsFavorite(entry.isFavorite || false);
         setSavedDiaries(prev => new Map(prev).set(dateStr, entry));
         // 既存の日記がある場合は、その日記に関連する情報は表示しない
         setSelectedImage(null);
@@ -173,7 +206,8 @@ function App() {
           text: diaryText,
           imageData: imagePreview?.split(',')[1] || '',
           imageMimeType: selectedImage.type,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          isFavorite: false
         };
 
         // ローカルキャッシュに保存
@@ -240,9 +274,25 @@ function App() {
           <div className="flex justify-center">
             <div className="bg-white p-6 rounded-xl shadow-lg border border-orange-200">
               <Calendar
+                key={`calendar-${savedDiaries.size}`}
                 onChange={handleDateChange}
                 value={selectedDate}
                 locale="ja-JP"
+                tileContent={({ date, view }) => {
+                  if (view === 'month') {
+                    const dateStr = formatDate(date);
+                    const diary = savedDiaries.get(dateStr);
+                    // 日記が存在し、かつ明示的にお気に入りがtrueの場合のみ表示
+                    if (diary && diary.isFavorite === true) {
+                      return (
+                        <div className="flex justify-center items-center mt-1">
+                          <span className="text-yellow-500 text-sm">⭐</span>
+                        </div>
+                      );
+                    }
+                  }
+                  return null;
+                }}
               />
             </div>
           </div>
@@ -294,94 +344,108 @@ function App() {
 
                 {/* 左ページ - 写真のみ */}
                 <div className="flex-1 p-8 border-r border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 relative" style={{ backgroundImage: 'linear-gradient(to right, rgba(251, 146, 60, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(251, 146, 60, 0.02) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
-                <div className="h-full flex flex-col">
-                  <h3 className="text-2xl font-serif font-semibold text-orange-900 mb-6 text-center">
-                    📷 {selectedDate.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}の写真
-                  </h3>
+                  <div className="h-full flex flex-col">
+                    <h3 className="text-2xl font-serif font-semibold text-orange-900 mb-6 text-center">
+                      📷 {selectedDate.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}の写真
+                    </h3>
 
-                  {imagePreview ? (
-                    <div className="flex-1 flex items-center justify-center">
-                      <img
-                        src={imagePreview}
-                        alt="思い出の写真"
-                        className="max-w-full max-h-[400px] object-contain rounded-xl shadow-lg border-4 border-white"
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex items-center justify-center">
-                      <div className="text-center text-orange-300">
-                        <div className="text-6xl mb-4">📷</div>
-                        <p className="text-lg font-serif">写真を選択してください</p>
+                    {imagePreview ? (
+                      <div className="flex-1 flex items-center justify-center">
+                        <img
+                          src={imagePreview}
+                          alt="思い出の写真"
+                          className="max-w-full max-h-[400px] object-contain rounded-xl shadow-lg border-4 border-white"
+                        />
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center text-orange-300">
+                          <div className="text-6xl mb-4">📷</div>
+                          <p className="text-lg font-serif">写真を選択してください</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* 右ページ - 日記のみ */}
-              <div className="flex-1 p-8 bg-gradient-to-br from-orange-50 to-amber-50 relative" style={{ backgroundImage: 'linear-gradient(to right, rgba(251, 146, 60, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(251, 146, 60, 0.02) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
-                <div className="h-full flex flex-col">
-                  <h3 className="text-2xl font-serif font-semibold text-orange-900 mb-6 text-center">
-                    📖 {selectedDate.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}の日記
-                  </h3>
+                {/* 右ページ - 日記のみ */}
+                <div className="flex-1 p-8 bg-gradient-to-br from-orange-50 to-amber-50 relative" style={{ backgroundImage: 'linear-gradient(to right, rgba(251, 146, 60, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(251, 146, 60, 0.02) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+                  <div className="h-full flex flex-col">
+                    <h3 className="text-2xl font-serif font-semibold text-orange-900 mb-6 text-center">
+                      📖 {selectedDate.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}の日記
+                    </h3>
 
-                  {error && (
-                    <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded-lg">
-                      <p className="text-red-700 whitespace-pre-line">{error}</p>
-                    </div>
-                  )}
+                    {error && (
+                      <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded-lg">
+                        <p className="text-red-700 whitespace-pre-line">{error}</p>
+                      </div>
+                    )}
 
-                  {loading && (
-                    <div className="flex-1 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500"></div>
-                    </div>
-                  )}
+                    {loading && (
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500"></div>
+                      </div>
+                    )}
 
-                  {diary && !loading && (
-                    <div className="flex-1">
-                      <div className="bg-white border-l-4 border-orange-400 p-6 rounded-r-xl shadow-inner h-full">
-                        <div className="space-y-6">
-                          {/* 装飾的なライン */}
-                          <div className="flex items-center space-x-2">
-                            <div className="w-12 h-0.5 bg-orange-400"></div>
-                            <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                            <div className="w-8 h-0.5 bg-orange-400"></div>
+                    {diary && !loading && (
+                      <div className="flex-1">
+                        <div className="bg-white border-l-4 border-orange-400 p-6 rounded-r-xl shadow-inner h-full">
+                          <div className="space-y-6">
+                            {/* 装飾的なライン */}
+                            <div className="flex items-center space-x-2">
+                              <div className="w-12 h-0.5 bg-orange-400"></div>
+                              <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                              <div className="w-8 h-0.5 bg-orange-400"></div>
+                            </div>
+
+                            {/* 日記本文のみ表示 */}
+                            <p className="text-gray-800 leading-relaxed whitespace-pre-wrap font-serif text-lg">
+                              {diary}
+                            </p>
+
+                            {/* 装飾的なライン */}
+                            <div className="flex items-center justify-end space-x-2">
+                              <div className="w-8 h-0.5 bg-orange-400"></div>
+                              <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                              <div className="w-12 h-0.5 bg-orange-400"></div>
+                            </div>
                           </div>
 
-                          {/* 日記本文のみ表示 */}
-                          <p className="text-gray-800 leading-relaxed whitespace-pre-wrap font-serif text-lg">
-                            {diary}
+                          {/* 日付 */}
+                          <p className="text-sm text-orange-600 mt-8 text-right font-medium border-t border-orange-200 pt-4">
+                            {selectedDate.toLocaleDateString('ja-JP', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
                           </p>
 
-                          {/* 装飾的なライン */}
-                          <div className="flex items-center justify-end space-x-2">
-                            <div className="w-8 h-0.5 bg-orange-400"></div>
-                            <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                            <div className="w-12 h-0.5 bg-orange-400"></div>
+                          {/* お気に入りボタン */}
+                          <div className="mt-4 flex justify-center">
+                            <button
+                              onClick={toggleFavorite}
+                              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${isFavorite
+                                  ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                            >
+                              <span className="text-xl">{isFavorite ? '⭐' : '☆'}</span>
+                              <span>{isFavorite ? 'お気に入り済み' : 'お気に入り'}</span>
+                            </button>
                           </div>
                         </div>
-
-                        {/* 日付 */}
-                        <p className="text-sm text-orange-600 mt-8 text-right font-medium border-t border-orange-200 pt-4">
-                          {selectedDate.toLocaleDateString('ja-JP', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </p>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {!diary && !loading && !error && (
-                    <div className="flex-1 flex items-center justify-center text-orange-300">
-                      <p className="text-lg font-serif">日記を生成すると、ここに表示されます</p>
-                    </div>
-                  )}
+                    {!diary && !loading && !error && (
+                      <div className="flex-1 flex items-center justify-center text-orange-300">
+                        <p className="text-lg font-serif">日記を生成すると、ここに表示されます</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
           </div>
         </div>
 
