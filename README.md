@@ -1,6 +1,6 @@
 # AIbum（アイバム）
 
-[![IMAGE ALT TEXT HERE](https://jphacks.com/wp-content/uploads/2025/05/JPHACKS2025_ogp.jpg)](https://www.youtube.com/watch?v=lA9EluZugD8)
+[![IMAGE ALT TEXT HERE](file:///C:/cygwin64/home/81702/programming2/output.html)](https://www.youtube.com/watch?v=lA9EluZugD8)
 
 ## 製品概要
 写真から日記を生成するwebアプリです。写真や選択できる絵文字をもとに文章を生成します。　　
