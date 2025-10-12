@@ -1,6 +1,6 @@
 # AIbum（アイバム）
 
-<img src="images/hamburg.png" alt="ハンバーグ画像" width="400">
+(https://d.kuku.lu/yxytkjmpc)
 
 ## 製品概要
 写真から日記を生成するwebアプリです。写真や選択できる絵文字をもとに文章を生成します。　　
