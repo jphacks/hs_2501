@@ -1,6 +1,6 @@
 # AIbum（アイバム）
 
-<img src="https://ibb.co/wNrJfBrG"  width="640">
+(https://vscode.dev/github/jphacks/hs_2501/blob/main/images/humburg.png)
 
 ## 製品概要
 写真から日記を生成するwebアプリです。写真や選択できる絵文字をもとに文章を生成します。　　
