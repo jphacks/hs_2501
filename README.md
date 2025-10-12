@@ -1,6 +1,6 @@
 # AIbum（アイバム）
 
-[![IMAGE ALT TEXT HERE](https://jphacks.com/wp-content/uploads/2025/05/JPHACKS2025_ogp.jpg)]
+<img src="images/hamburg.png" alt="ハンバーグ画像" width="400">
 
 ## 製品概要
 写真から日記を生成するwebアプリです。写真や選択できる絵文字をもとに文章を生成します。　　
