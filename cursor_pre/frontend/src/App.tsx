@@ -26,6 +26,7 @@ function App() {
   const [savedDiaries, setSavedDiaries] = useState<Map<string, DiaryEntry>>(new Map());
   const [selectedEmotion, setSelectedEmotion] = useState<string>('');
   const [keywords, setKeywords] = useState<string>('');
+  const [writingStyle, setWritingStyle] = useState<string>('通常');
 
   // アプリ起動時にローカルストレージから日記を読み込み
   useEffect(() => {
@@ -60,6 +61,7 @@ function App() {
       setImagePreview(null);
       setSelectedEmotion('');
       setKeywords('');
+      setWritingStyle('通常');
       setDiary('');
 
       loadDiaryForDate(value);
@@ -95,6 +97,7 @@ function App() {
       setSelectedImage(null);
       setSelectedEmotion('');
       setKeywords('');
+      setWritingStyle('通常');
       return;
     }
 
@@ -110,6 +113,7 @@ function App() {
         setSelectedImage(null);
         setSelectedEmotion('');
         setKeywords('');
+        setWritingStyle('通常');
       }
     } catch (err: any) {
       if (err.response?.status !== 404) {
@@ -135,6 +139,7 @@ function App() {
     formData.append('date', formatDate(selectedDate));
     formData.append('emotion', selectedEmotion);
     formData.append('keywords', keywords);
+    formData.append('writingStyle', writingStyle);
 
     try {
       const response = await axios.post(`${API_URL}/api/generate-diary`, formData, {
@@ -343,6 +348,35 @@ function App() {
                               </div>
                             </div>
                           )}
+                        </div>
+                      </div>
+
+                      {/* 文体選択 */}
+                      <div className="mt-6">
+                        <h4 className="text-lg font-serif font-semibold text-orange-900 mb-3">
+                          ✍️ 文体スタイル
+                        </h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { label: '通常', emoji: '📝' },
+                            { label: '小説風', emoji: '📖' },
+                            { label: '関西弁風', emoji: '🎭' },
+                            { label: 'ギャル風', emoji: '💅' },
+                            { label: '詩的', emoji: '🌸' },
+                            { label: '丁寧語', emoji: '🎩' }
+                          ].map((style) => (
+                            <button
+                              key={style.label}
+                              onClick={() => setWritingStyle(style.label)}
+                              className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 font-serif ${writingStyle === style.label
+                                ? 'bg-orange-300 shadow-lg scale-105 font-bold'
+                                : 'bg-orange-100 hover:bg-orange-200 hover:scale-105'
+                                }`}
+                            >
+                              <span>{style.emoji}</span>
+                              <span>{style.label}</span>
+                            </button>
+                          ))}
                         </div>
                       </div>
                     </div>
