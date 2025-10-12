@@ -47,7 +47,7 @@ app.post('/api/generate-diary', upload.single('image'), async (req, res) => {
       });
     }
 
-    const { date } = req.body;
+    const { date, emotion } = req.body;
     if (!date) {
       return res.status(400).json({ 
         error: 'リクエストエラー',
@@ -66,9 +66,16 @@ app.post('/api/generate-diary', upload.single('image'), async (req, res) => {
       }
     };
 
+    // 感情に応じたプロンプトを構築
+    let emotionText = '';
+    if (emotion) {
+      emotionText = ` 特に${emotion}の感情を込めて書いてください。`;
+    }
+
     const prompt = `この画像を見て、その日の出来事を想像し、200文字程度の日記形式の文章を日本語で書いてください。
 温かみのある、個人的な日記のような文体で書いてください。
-具体的な描写や感情を含めてください。`;
+具体的な描写や感情を含めてください。${emotionText}
+日記の本文のみを出力し、説明文や前置きは不要です。`;
 
     // 生成実行
     const result = await model.generateContent([prompt, imageData]);

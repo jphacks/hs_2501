@@ -24,6 +24,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [savedDiaries, setSavedDiaries] = useState<Map<string, DiaryEntry>>(new Map());
+  const [selectedEmotion, setSelectedEmotion] = useState<string>('');
 
   // 日付を文字列に変換
   const formatDate = (date: Date): string => {
@@ -101,6 +102,7 @@ function App() {
     const formData = new FormData();
     formData.append('image', selectedImage);
     formData.append('date', formatDate(selectedDate));
+    formData.append('emotion', selectedEmotion);
 
     try {
       const response = await axios.post(`${API_URL}/api/generate-diary`, formData, {
@@ -146,6 +148,12 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 再生成
+  const handleRegenerateDiary = () => {
+    setDiary('');
+    handleGenerateDiary();
   };
 
   return (
@@ -240,6 +248,28 @@ function App() {
                         />
                       </div>
                     )}
+
+                    {/* 感情選択 */}
+                    <div className="mt-6">
+                      <h4 className="text-lg font-serif font-semibold text-orange-900 mb-3">
+                        😊 感情を選択（任意）
+                      </h4>
+                      <div className="grid grid-cols-4 gap-2">
+                        {['😊', '😢', '😍', '😴', '😋', '😎', '🤔', '🥳'].map((emotion) => (
+                          <button
+                            key={emotion}
+                            onClick={() => setSelectedEmotion(emotion)}
+                            className={`text-2xl p-3 rounded-lg transition-all duration-200 ${
+                              selectedEmotion === emotion
+                                ? 'bg-orange-300 shadow-lg scale-110'
+                                : 'bg-orange-100 hover:bg-orange-200 hover:scale-105'
+                            }`}
+                          >
+                            {emotion}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   {/* 生成ボタン（小さく） */}
@@ -279,36 +309,49 @@ function App() {
                 )}
 
                 {diary && !loading && (
-                  <div className="bg-white border-l-4 border-orange-400 p-6 rounded-r-xl shadow-inner">
-                    <div className="space-y-6">
-                      {/* 装飾的なライン */}
-                      <div className="flex items-center space-x-2">
-                        <div className="w-12 h-0.5 bg-orange-400"></div>
-                        <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                        <div className="w-8 h-0.5 bg-orange-400"></div>
-                      </div>
-                      
-                      {/* 日記本文 */}
-                      <p className="text-gray-800 leading-relaxed whitespace-pre-wrap font-serif text-lg">
-                        {diary}
-                      </p>
-                      
-                      {/* 装飾的なライン */}
-                      <div className="flex items-center justify-end space-x-2">
-                        <div className="w-8 h-0.5 bg-orange-400"></div>
-                        <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                        <div className="w-12 h-0.5 bg-orange-400"></div>
-                      </div>
+                  <div className="space-y-4">
+                    {/* 再生成ボタン */}
+                    <div className="flex justify-end">
+                      <button
+                        onClick={handleRegenerateDiary}
+                        className="bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 shadow-md hover:shadow-lg"
+                      >
+                        🔄 再生成
+                      </button>
                     </div>
-                    
-                    {/* 日付 */}
-                    <p className="text-sm text-orange-600 mt-8 text-right font-medium border-t border-orange-200 pt-4">
-                      {selectedDate.toLocaleDateString('ja-JP', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
+
+                    {/* 日記本文 */}
+                    <div className="bg-white border-l-4 border-orange-400 p-6 rounded-r-xl shadow-inner">
+                      <div className="space-y-6">
+                        {/* 装飾的なライン */}
+                        <div className="flex items-center space-x-2">
+                          <div className="w-12 h-0.5 bg-orange-400"></div>
+                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <div className="w-8 h-0.5 bg-orange-400"></div>
+                        </div>
+                        
+                        {/* 日記本文のみ表示 */}
+                        <p className="text-gray-800 leading-relaxed whitespace-pre-wrap font-serif text-lg">
+                          {diary}
+                        </p>
+                        
+                        {/* 装飾的なライン */}
+                        <div className="flex items-center justify-end space-x-2">
+                          <div className="w-8 h-0.5 bg-orange-400"></div>
+                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <div className="w-12 h-0.5 bg-orange-400"></div>
+                        </div>
+                      </div>
+                      
+                      {/* 日付 */}
+                      <p className="text-sm text-orange-600 mt-8 text-right font-medium border-t border-orange-200 pt-4">
+                        {selectedDate.toLocaleDateString('ja-JP', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
                   </div>
                 )}
 
