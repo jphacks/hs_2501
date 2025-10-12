@@ -504,8 +504,8 @@ function App() {
                         <button
                           onClick={toggleFavorite}
                           className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${isFavorite
-                              ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                             }`}
                         >
                           <span className="text-xl">{isFavorite ? '⭐' : '☆'}</span>
