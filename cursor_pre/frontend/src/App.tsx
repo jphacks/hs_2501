@@ -27,11 +27,8 @@ function App() {
   const [savedDiaries, setSavedDiaries] = useState<Map<string, DiaryEntry>>(new Map());
   const [selectedEmotion, setSelectedEmotion] = useState<string>('');
   const [keywords, setKeywords] = useState<string>('');
-<<<<<<< HEAD
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
-=======
   const [writingStyle, setWritingStyle] = useState<string>('通常');
->>>>>>> 6f0392e19cdd3c0d628e535e286cf76b47d37f9b
 
   // アプリ起動時にローカルストレージから日記を読み込み
   useEffect(() => {
@@ -263,6 +260,7 @@ function App() {
           <div className="flex justify-center">
             <div className="bg-white p-6 rounded-xl shadow-lg border border-orange-200">
               <Calendar
+                key={`calendar-${savedDiaries.size}`}
                 onChange={handleDateChange}
                 value={selectedDate}
                 locale="ja-JP"
@@ -270,7 +268,8 @@ function App() {
                   if (view === 'month') {
                     const dateStr = formatDate(date);
                     const diary = savedDiaries.get(dateStr);
-                    if (diary && diary.isFavorite) {
+                    // 日記が存在し、かつ明示的にお気に入りがtrueの場合のみ表示
+                    if (diary && diary.isFavorite === true) {
                       return (
                         <div className="flex justify-center items-center mt-1">
                           <span className="text-yellow-500 text-sm">⭐</span>
@@ -505,8 +504,8 @@ function App() {
                         <button
                           onClick={toggleFavorite}
                           className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${isFavorite
-                              ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                             }`}
                         >
                           <span className="text-xl">{isFavorite ? '⭐' : '☆'}</span>
