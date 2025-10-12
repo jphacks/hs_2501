@@ -234,7 +234,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+    <div className="min-h-screen py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold text-center text-indigo-900 mb-8">
           📸 画像日記生成アプリ
@@ -243,7 +243,7 @@ function App() {
         <div className="grid md:grid-cols-2 gap-8">
           {/* 左側：カレンダーと操作 */}
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="card p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
                 1. 日付を選択
               </h2>
@@ -259,7 +259,7 @@ function App() {
               </p>
             </div>
 
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="card p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
                 2. 画像をアップロード
               </h2>
@@ -286,19 +286,15 @@ function App() {
               )}
             </div>
 
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="card p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
                 3. 日記を生成
               </h2>
               <button
                 onClick={handleGenerateDiary}
                 disabled={loading || !selectedImage}
-                className={`w-full py-3 px-6 rounded-lg font-semibold text-white
-                  ${loading || !selectedImage
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800'
-                  }
-                  transition-colors duration-200`}
+                className={`w-full py-3 px-6 rounded-lg font-semibold text-white btn-accent
+                  ${loading || !selectedImage ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 {loading ? '生成中...' : '日記を生成する'}
               </button>
@@ -306,7 +302,7 @@ function App() {
           </div>
 
           {/* 右側：結果表示 */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="card p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               4. 生成された日記
             </h2>
@@ -325,7 +321,7 @@ function App() {
 
             {diary && !loading && (
               <div className="prose max-w-none">
-                <div className="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-r-lg">
+                <div className="bg-white p-6 rounded-r-lg">
                   <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
                     {diary}
                   </p>
@@ -339,14 +335,14 @@ function App() {
                   <div className="mt-4 flex gap-3 justify-end">
                     <button
                       onClick={handleDeleteDiary}
-                      className="py-2 px-4 rounded-md bg-red-100 text-red-700 hover:bg-red-200"
+                      className="py-2 px-4 rounded-md btn-muted"
                     >
                       削除
                     </button>
                     <button
                       onClick={handleRegenerateDiary}
                       disabled={loading}
-                      className={`py-2 px-4 rounded-md text-white ${loading ? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                      className={`py-2 px-4 rounded-md text-white btn-accent ${loading ? 'opacity-60' : ''}`}
                     >
                       再生成
                     </button>
