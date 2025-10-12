@@ -148,228 +148,179 @@ function App() {
     }
   };
 
-  // base64 文字列を File に変換
-  const base64ToFile = (base64: string, mime: string, filename: string) => {
-    const byteString = atob(base64);
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
-    return new File([ab], filename, { type: mime });
-  };
-
-  // 任意の File から生成処理を行う（handleGenerateDiary と同様の処理を受け取った file で実行）
-  const generateFromFile = async (file: File) => {
-    setLoading(true);
-    setError('');
-    setDiary('');
-
-    const formData = new FormData();
-    formData.append('image', file);
-    formData.append('date', formatDate(selectedDate));
-
-    try {
-      const response = await axios.post(`${API_URL}/api/generate-diary`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      if (response.data.success) {
-        const diaryText = response.data.diary;
-        setDiary(diaryText);
-
-        const dateStr = formatDate(selectedDate);
-        const newEntry: DiaryEntry = {
-          date: dateStr,
-          text: diaryText,
-          imageData: imagePreview?.split(',')[1] || '',
-          imageMimeType: file.type,
-          createdAt: new Date().toISOString(),
-        };
-        setSavedDiaries(prev => new Map(prev).set(dateStr, newEntry));
-      }
-    } catch (err: any) {
-      console.error('エラー:', err);
-      setError('⚠️ 再生成中にエラーが発生しました。コンソールを確認してください。');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 日記を削除（ローカルキャッシュからのみ削除）
-  const handleDeleteDiary = () => {
-    const dateStr = formatDate(selectedDate);
-    setSavedDiaries(prev => {
-      const m = new Map(prev);
-      m.delete(dateStr);
-      return m;
-    });
-    setDiary('');
-  };
-
-  // 日記を再生成（selectedImage がなければ保存済みの imageData を使って再生成）
-  const handleRegenerateDiary = async () => {
-    const dateStr = formatDate(selectedDate);
-
-    if (loading) return;
-
-    if (selectedImage) {
-      await handleGenerateDiary();
-      return;
-    }
-
-    const entry = savedDiaries.get(dateStr);
-    if (!entry || !entry.imageData) {
-      setError('再生成する画像が見つかりません。画像をアップロードしてください。');
-      return;
-    }
-
-    try {
-      const file = base64ToFile(entry.imageData, entry.imageMimeType || 'image/jpeg', `${dateStr}.jpg`);
-      // update preview so user sees it
-      setImagePreview(`data:${entry.imageMimeType};base64,${entry.imageData}`);
-      await generateFromFile(file);
-    } catch (err) {
-      console.error('再生成エラー:', err);
-      setError('⚠️ 再生成に失敗しました');
-    }
-  };
-
   return (
-    <div className="min-h-screen py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-center text-indigo-900 mb-8">
-          📸 画像日記生成アプリ
-        </h1>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-4">
+      <div className="max-w-6xl mx-auto space-y-8">
+        
+        {/* 1. タイトルセクション（本の表紙風） */}
+        <div className="text-center py-8">
+          <h1 className="text-6xl font-serif font-bold text-orange-900 drop-shadow-lg">
+            クロノレンズ
+          </h1>
+          <div className="w-32 h-1 bg-gradient-to-r from-orange-400 to-amber-500 mx-auto mt-4 rounded-full"></div>
+        </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* 左側：カレンダーと操作 */}
-          <div className="space-y-6">
-            <div className="card p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                1. 日付を選択
-              </h2>
-              <div className="flex justify-center">
-                <Calendar
-                  onChange={handleDateChange}
-                  value={selectedDate}
-                  locale="ja-JP"
-                />
-              </div>
-              <p className="text-center mt-4 text-gray-600">
-                選択日: {selectedDate.toLocaleDateString('ja-JP')}
-              </p>
-            </div>
-
-            <div className="card p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                2. 画像をアップロード
-              </h2>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-full file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-indigo-50 file:text-indigo-700
-                  hover:file:bg-indigo-100
-                  cursor-pointer"
+        {/* 2. カレンダーセクション（本のページ風） */}
+        <div className="bg-gradient-to-br from-orange-100 to-amber-100 p-8 rounded-2xl shadow-xl border border-orange-200">
+          <div className="text-center mb-6">
+            <h2 className="text-3xl font-serif font-semibold text-orange-900 mb-2">
+              📅 カレンダー
+            </h2>
+            <div className="w-16 h-0.5 bg-orange-600 mx-auto"></div>
+          </div>
+          <div className="flex justify-center">
+            <div className="bg-white p-6 rounded-xl shadow-lg border border-orange-200">
+              <Calendar
+                onChange={handleDateChange}
+                value={selectedDate}
+                locale="ja-JP"
               />
-              {imagePreview && (
-                <div className="mt-4">
-                  <img
-                    src={imagePreview}
-                    alt="プレビュー"
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="card p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                3. 日記を生成
-              </h2>
-              <button
-                onClick={handleGenerateDiary}
-                disabled={loading || !selectedImage}
-                className={`w-full py-3 px-6 rounded-lg font-semibold text-white btn-accent
-                  ${loading || !selectedImage ? 'opacity-60 cursor-not-allowed' : ''}`}
-              >
-                {loading ? '生成中...' : '日記を生成する'}
-              </button>
             </div>
           </div>
+          <p className="text-center mt-6 text-orange-800 text-lg font-medium">
+            選択日: {selectedDate.toLocaleDateString('ja-JP')}
+          </p>
+        </div>
 
-          {/* 右側：結果表示 */}
-          <div className="card p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              4. 生成された日記
-            </h2>
+        {/* 3. 開いた本のセクション */}
+        <div className="bg-gradient-to-br from-amber-100 to-yellow-100 p-8 rounded-2xl shadow-xl border border-amber-200 relative">
+          {/* 罫線の背景 */}
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-100 to-yellow-100 rounded-2xl" 
+               style={{
+                 backgroundImage: `
+                   linear-gradient(to right, rgba(251, 146, 60, 0.1) 1px, transparent 1px),
+                   linear-gradient(to bottom, rgba(251, 146, 60, 0.1) 1px, transparent 1px)
+                 `,
+                 backgroundSize: '20px 20px'
+               }}>
+          </div>
+          
+          <div className="relative z-10">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-serif font-semibold text-orange-900 mb-2">
+                📸 画像日記生成
+              </h2>
+              <div className="w-16 h-0.5 bg-amber-600 mx-auto"></div>
+            </div>
             
-            {error && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-700 whitespace-pre-line">{error}</p>
+            {/* 開いた本のデザイン */}
+            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-orange-200">
+            <div className="flex">
+              {/* 本の背表紙部分（中央） */}
+              <div className="w-2 bg-gradient-to-b from-orange-600 to-amber-600 flex items-center justify-center">
+                <div className="w-0.5 h-8 bg-orange-800 rounded-full"></div>
               </div>
-            )}
+              
+              {/* 左ページ */}
+              <div className="flex-1 p-8 border-r border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50">
+                <div className="h-full flex flex-col justify-between">
+                  {/* 画像アップロード部分 */}
+                  <div className="space-y-6">
+                    <h3 className="text-2xl font-serif font-semibold text-orange-900 mb-6 flex items-center">
+                      📷 画像をアップロード
+                    </h3>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="block w-full text-sm text-gray-600
+                        file:mr-4 file:py-3 file:px-6
+                        file:rounded-xl file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-orange-100 file:text-orange-800
+                        hover:file:bg-orange-200
+                        cursor-pointer transition-all duration-200"
+                    />
+                    {imagePreview && (
+                      <div className="mt-6">
+                        <img
+                          src={imagePreview}
+                          alt="プレビュー"
+                          className="w-full h-48 object-cover rounded-xl shadow-lg border border-orange-200"
+                        />
+                      </div>
+                    )}
+                  </div>
 
-            {loading && (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-              </div>
-            )}
-
-            {diary && !loading && (
-              <div className="prose max-w-none">
-                <div className="bg-white p-6 rounded-r-lg">
-                  <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                    {diary}
-                  </p>
-                  <p className="text-sm text-gray-500 mt-4 text-right">
-                    {selectedDate.toLocaleDateString('ja-JP', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </p>
-                  <div className="mt-4 flex gap-3 justify-end">
+                  {/* 生成ボタン（小さく） */}
+                  <div className="mt-8">
                     <button
-                      onClick={handleDeleteDiary}
-                      className="py-2 px-4 rounded-md btn-muted"
+                      onClick={handleGenerateDiary}
+                      disabled={loading || !selectedImage}
+                      className={`w-full py-3 px-6 rounded-xl font-semibold text-white text-base
+                        ${loading || !selectedImage
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:from-orange-700 active:to-amber-700 shadow-lg hover:shadow-xl'
+                        }
+                        transition-all duration-300 transform hover:scale-105`}
                     >
-                      削除
-                    </button>
-                    <button
-                      onClick={handleRegenerateDiary}
-                      disabled={loading}
-                      className={`py-2 px-4 rounded-md text-white btn-accent ${loading ? 'opacity-60' : ''}`}
-                    >
-                      再生成
+                      {loading ? '生成中...' : '日記を生成'}
                     </button>
                   </div>
                 </div>
               </div>
-            )}
 
-            {!diary && !loading && !error && (
-              <div className="text-center py-12 text-gray-400">
-                <p>日記を生成すると、ここに表示されます</p>
+              {/* 右ページ */}
+              <div className="flex-1 p-8 bg-gradient-to-br from-orange-50 to-amber-50">
+                <h3 className="text-2xl font-serif font-semibold text-orange-900 mb-6 flex items-center">
+                  📖 生成された日記
+                </h3>
+                
+                {error && (
+                  <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded-lg">
+                    <p className="text-red-700 whitespace-pre-line">{error}</p>
+                  </div>
+                )}
+
+                {loading && (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500"></div>
+                  </div>
+                )}
+
+                {diary && !loading && (
+                  <div className="bg-white border-l-4 border-orange-400 p-6 rounded-r-xl shadow-inner">
+                    <div className="space-y-6">
+                      {/* 装飾的なライン */}
+                      <div className="flex items-center space-x-2">
+                        <div className="w-12 h-0.5 bg-orange-400"></div>
+                        <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                        <div className="w-8 h-0.5 bg-orange-400"></div>
+                      </div>
+                      
+                      {/* 日記本文 */}
+                      <p className="text-gray-800 leading-relaxed whitespace-pre-wrap font-serif text-lg">
+                        {diary}
+                      </p>
+                      
+                      {/* 装飾的なライン */}
+                      <div className="flex items-center justify-end space-x-2">
+                        <div className="w-8 h-0.5 bg-orange-400"></div>
+                        <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                        <div className="w-12 h-0.5 bg-orange-400"></div>
+                      </div>
+                    </div>
+                    
+                    {/* 日付 */}
+                    <p className="text-sm text-orange-600 mt-8 text-right font-medium border-t border-orange-200 pt-4">
+                      {selectedDate.toLocaleDateString('ja-JP', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                )}
+
+                {!diary && !loading && !error && (
+                  <div className="text-center py-20 text-orange-400">
+                    <p className="text-lg font-serif">日記を生成すると、ここに表示されます</p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+            </div>
           </div>
-        </div>
-
-        <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">
-            📝 使い方
-          </h3>
-          <ol className="list-decimal list-inside space-y-2 text-gray-600">
-            <li>カレンダーで日付を選択します</li>
-            <li>画像アップロードボタンから画像を選択します</li>
-            <li>「日記を生成する」ボタンを押します</li>
-            <li>生成された日記が右側に表示されます</li>
-            <li>カレンダーの日付を選択すると、その日の日記を確認できます</li>
-          </ol>
         </div>
       </div>
     </div>
@@ -377,4 +328,6 @@ function App() {
 }
 
 export default App;
+
+
 

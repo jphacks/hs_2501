@@ -173,3 +173,5 @@ MIT
 
 このプロジェクトは[Google Gemini AI](https://ai.google.dev/)を使用しています。
 
+
+

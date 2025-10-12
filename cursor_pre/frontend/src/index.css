@@ -9,8 +9,6 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(180deg, #FFF7ED 0%, #FFF1E6 100%); /* soft warm background */
-  color: #4b2e07; /* warm deep text */
 }
 
 /* React Calendar スタイリング */
@@ -40,16 +38,15 @@ body {
 
 .react-calendar__navigation button:enabled:hover,
 .react-calendar__navigation button:enabled:focus {
-  background-color: #fff4e6;
-  color: #b45309;
+  background-color: #f3f4f6;
 }
 
 .react-calendar__month-view__weekdays {
   text-align: center;
   text-transform: uppercase;
-  font-weight: 700;
-  font-size: 0.78em;
-  color: #92400e; /* warm weekday color */
+  font-weight: bold;
+  font-size: 0.75em;
+  color: #6b7280;
 }
 
 .react-calendar__month-view__days__day {
@@ -64,24 +61,20 @@ body {
 }
 
 .react-calendar__tile--now {
-  background: #fff1e6; /* subtle warm highlight */
-  border-radius: 0.35rem;
-  box-shadow: 0 2px 6px rgba(148, 61, 1, 0.08);
+  background: #dbeafe;
+  border-radius: 0.25rem;
 }
 
 .react-calendar__tile--active {
-  background: #fb923c; /* orange */
+  background: #3b82f6;
   color: white;
-  border-radius: 0.35rem;
-  box-shadow: 0 6px 18px rgba(251, 146, 60, 0.18);
+  border-radius: 0.25rem;
 }
 
 .react-calendar__tile:enabled:hover {
-  background-color: #fff3e0;
-  border-radius: 0.35rem;
+  background-color: #e5e7eb;
+  border-radius: 0.25rem;
   cursor: pointer;
-  transform: translateY(-2px);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 .react-calendar__tile--active:enabled:hover {
@@ -101,23 +94,5 @@ body {
   color: white;
 }
 
-/* Fancy card and button helpers */
-.card {
-  background: linear-gradient(180deg, #fffaf0, #fff4e6);
-  border-radius: 0.75rem;
-  box-shadow: 0 8px 30px rgba(149, 66, 15, 0.06);
-  border: 1px solid rgba(149,66,15,0.06);
-}
 
-.btn-accent {
-  background: linear-gradient(90deg, #fb923c, #f97316);
-  color: white;
-  box-shadow: 0 8px 20px rgba(249,115,22,0.12);
-}
-
-.btn-muted {
-  background: #fff6ee;
-  color: #b45309;
-  border: 1px solid rgba(180,83,9,0.06);
-}
 
