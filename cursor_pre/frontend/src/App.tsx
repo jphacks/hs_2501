@@ -393,7 +393,7 @@ function App() {
                           }
                         transition-all duration-300 transform hover:scale-105`}
                       >
-                        {loading ? '生成中...' : (diary ? '🔄 再生成' : '✨ 日記をつくる')}
+                        {loading ? '生成中...' : (diary ? '🔄 再生成' : '✏️ 日記をつくる')}
                       </button>
                     </div>
                   </div>
@@ -453,7 +453,7 @@ function App() {
 
                   {!diary && !loading && !error && (
                     <div className="text-center py-20 text-orange-400">
-                      <p className="text-lg font-serif">日記を生成すると、ここに表示されます</p>
+                      <p className="text-lg font-serif">まだ日記はありません</p>
                     </div>
                   )}
                 </div>
