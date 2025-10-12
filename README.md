@@ -1,6 +1,6 @@
 # AIbum（アイバム）
 
-(https://119.gigafile.nu/0121-ce3ffdfc22bcf0f4ddfccad4b60a09bc4)
+(https://ibb.co/wNrJfBrG)
 
 ## 製品概要
 写真から日記を生成するwebアプリです。写真や選択できる絵文字をもとに文章を生成します。　　
