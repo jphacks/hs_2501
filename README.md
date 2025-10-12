@@ -47,17 +47,25 @@
 
 ## 開発技術
 ### 活用した技術
+画像アップロードとAIによる日記生成（Gemini API）
+カレンダーUIと日付管理
+フロントエンド・バックエンド分離によるAPI通信
+環境変数によるAPIキー管理
+レスポンシブデザイン（Tailwind CSS）
 #### API・データ
-* 
-* 
-
+* GeminiAPI
 #### フレームワーク・ライブラリ・モジュール
-* 
-* 
+* React 18：UI構築
+* Tailwind CSS
+* React Calendar
+* Axios
+* Node.js
+* Multer
+* Google Generative AI SDK
+* Gemini 
 
 #### デバイス
-* 
-* 
+* Windows11
 
 ### 独自技術
 #### ハッカソンで開発した独自機能・技術
